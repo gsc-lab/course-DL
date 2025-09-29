@@ -8,4 +8,4 @@ services:
     tty: true               # 가상 터미널(TTY) 활성화 → 컨테이너가 바로 종료되지 않고 유지됨
     stdin_open: true        # 표준 입력(STDIN) 열기 → VSCode에서 터미널 입력 가능
     restart: unless-stopped # 컨테이너 비정상 종료 시 자동 재시작, 단 사용자가 직접 docker stop 한 경우는 제외
-    #gpus: all               # GPU 전체 사용 (호스트에 NVIDIA Container Toolkit 설치 시 활성화, GPU 미 사용시 반드시 비활성화!)
+    gpus: all               # GPU 전체 사용 (호스트에 NVIDIA Container Toolkit 설치 시 활성화, GPU 미 사용시 반드시 비활성화!)
