@@ -1,0 +1,31 @@
+{
+  // 사용할 docker-compose 파일 경로
+  "dockerComposeFile": "../docker-compose.yml",
+
+  // devcontainer가 연결할 서비스 이름 (docker-compose.yml 안의 service 이름과 동일해야 함)
+  "service": "pytorch",
+
+  // VSCode에서 열릴 기본 작업 디렉토리 (컨테이너 내부 경로)
+  "workspaceFolder": "/workspace",
+
+  // VSCode 사용자 맞춤 설정: 확장팩 설치
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",        // Python 지원
+        "ms-python.vscode-pylance",// Python 언어 서버 (빠른 자동완성/타입체크)
+        "ms-toolsai.jupyter"       // Jupyter Notebook 지원
+      ]
+    }
+  },
+
+  // 컨테이너 최초 생성 시 1회 실행되는 명령어
+  // git 설치 (Dev Containers 확장에서 git 자격 관리 등에 필요)
+  "onCreateCommand": "bash -lc 'apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*'",
+
+  // 컨테이너가 attach된 직후 실행되는 명령어
+  // 1. requirements.txt 패키지 설치
+  // 2. ipykernel 등록 (VSCode Jupyter에서 선택 가능하도록)
+  // 3. torch.cuda.is_available() 실행 → CUDA 동작 여부 확인 출력
+  "postCreateCommand": "bash -lc 'pip install -r requirements.txt && python -m ipykernel install --name pytorch --display-name \"Python (PyTorch)\" --user && python - <<\"PY\"\nimport torch; print(\"CUDA available:\", torch.cuda.is_available())\nPY'"
+}

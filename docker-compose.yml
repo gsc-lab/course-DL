@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  pytorch:
+    image: pytorch/pytorch:2.8.0-cuda12.9-cudnn9-runtime # 실행할 PyTorch 런타임 이미지 (CUDA 12.9 + cuDNN 9 포함)
+    working_dir: /workspace # 컨테이너 진입 시 기본 경로 (cd /workspace 상태로 시작)
+    volumes:                # 호스트와 컨테이너 간 디렉토리 공유
+      - .:/workspace        # 현재 호스트 경로(.)를 컨테이너의 /workspace 에 마운트
+    tty: true               # 가상 터미널(TTY) 활성화 → 컨테이너가 바로 종료되지 않고 유지됨
+    stdin_open: true        # 표준 입력(STDIN) 열기 → VSCode에서 터미널 입력 가능
+    restart: unless-stopped # 컨테이너 비정상 종료 시 자동 재시작, 단 사용자가 직접 docker stop 한 경우는 제외
+    gpus: all               # GPU 전체 사용 (호스트에 NVIDIA Container Toolkit 설치 시 활성화, GPU 미 사용시 반드시 비활성화!)
