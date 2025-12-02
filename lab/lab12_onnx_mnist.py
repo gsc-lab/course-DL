@@ -2,13 +2,14 @@ import numpy as np
 from PIL import Image, ImageOps
 from flask import Flask, request, jsonify, render_template_string
 import onnxruntime as ort
+import cv2
 
 # -----------------------------
 # 1. ONNX Runtime 세션 로드
 # -----------------------------
 # CPU 전용
 session = ort.InferenceSession(
-    "tests/mnist.onnx",
+    "models/mnist.onnx",
     providers=["CPUExecutionProvider"]
 )
 
@@ -20,6 +21,7 @@ OUTPUT_NAME = "logits" # ONNX 출력 이름
 #    - 클라이언트에서 받은 이미지 파일 → [1, 1, 28, 28] float32
 # -----------------------------
 def preprocess_image(file) -> np.ndarray:
+   
     # 1) 이미지 로드 및 그레이스케일 변환
     image = Image.open(file).convert("L")
 
@@ -47,7 +49,7 @@ def preprocess_image(file) -> np.ndarray:
 # -----------------------------
 #  Flask 앱
 # -----------------------------
-app = Flask(__name__)
+app = Flask(__name__, static_url_path="/contents", static_folder="../static")
 
 
 # 테스트용 업로드 폼 
@@ -108,4 +110,6 @@ def predict():
 
 
 if __name__ == "__main__":
+    print(app.static_folder)
+    print(app.static_url_path)
     app.run(debug=True)

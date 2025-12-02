@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8">
+    <title>MNIST Canvas Demo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        #canvas-wrapper {
+            border: 1px solid #ccc;
+            display: inline-block;
+        }
+
+        #draw-area {
+            background: #ffffff;
+            /* 흰 배경 (MNIST와 맞추기 위해 invert 사용) */
+            cursor: crosshair;
+            touch-action: none;
+            /* 모바일에서 스크롤 방지 */
+        }
+
+        #result {
+            margin-top: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>손글씨 숫자 인식 데모 (0~9)</h1>
+
+    <div id="canvas-wrapper">
+        <!-- 280x280 에 크게 그리고, 서버에서 28x28로 리사이즈 -->
+        <canvas id="draw-area" width="280" height="280"></canvas>
+    </div>
+
+    <div style="margin-top: 10px;">
+        <button id="clear-btn">지우기</button>
+        <button id="predict-btn">예측하기</button>
+    </div>
+
+    <div id="result"></div>
+    <div id="result_probability"></div>
+
+    <script>
+        const canvas = document.getElementById('draw-area');
+        const ctx = canvas.getContext('2d');
+        const clearBtn = document.getElementById('clear-btn');
+        const predictBtn = document.getElementById('predict-btn');
+        const resultDiv = document.getElementById('result');
+        const resultProbDiv = document.getElementById('result_probability');
+
+
+        // 처음에 흰색 배경으로 초기화
+        function clearCanvas() {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        clearCanvas();
+
+        let drawing = false;
+        const lineWidth = 10;  // 선 두께(조절 가능)
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches && e.touches.length > 0) {
+                const t = e.touches[0];
+                return {
+                    x: t.clientX - rect.left,
+                    y: t.clientY - rect.top
+                };
+            } else {
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+        }
+
+        function startDraw(e) {
+            e.preventDefault();
+            drawing = true;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = '#000000';  // 검은색으로 그리기
+            ctx.stroke();
+        }
+
+        function endDraw(e) {
+            if (!drawing) return;
+            drawing = false;
+            e.preventDefault();
+            ctx.closePath();
+        }
+
+        // 마우스 이벤트
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', endDraw);
+
+        // 터치 이벤트 (모바일 대응)
+        canvas.addEventListener('touchstart', startDraw);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', endDraw);
+        canvas.addEventListener('touchcancel', endDraw);
+
+        clearBtn.addEventListener('click', () => {
+            clearCanvas();
+            resultDiv.textContent = '';
+            resultProbDiv.textContent = '';
+        });
+
+        predictBtn.addEventListener('click', () => {
+            resultDiv.textContent = '예측 중...';
+
+            // canvas → PNG Blob
+            canvas.toBlob(function (blob) {
+                const formData = new FormData();
+                // 서버에서 기대하는 필드 이름: "file"
+                formData.append('file', blob, 'canvas.png');
+
+                fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) {
+                            resultDiv.textContent = '에러: ' + data.error;
+                            resultProbDiv.textContent = '';
+                        } else {
+                            // 예측 숫자 표시
+                            resultDiv.textContent = '예측 숫자: ' + data.pred_class;
+
+                            const probs = data.probabilities;  // [10] 배열
+
+                            // 전체 확률을 표 형태로 구성
+                            let html = '<p>예측 확률:</p>';
+                            html += '<table border="1" cellpadding="5" style="border-collapse:collapse;">';
+                            html += '<tr><th>숫자</th><th>확률(%)</th></tr>';
+
+                            probs.forEach((p, i) => {
+                                const percentage = (p * 100).toFixed(2);  // 2자리 %
+                                const highlight = (i === data.pred_class)
+                                    ? ' style="background:#ffff99;font-weight:bold;"'
+                                    : '';
+                                html += `<tr${highlight}><td>${i}</td><td>${percentage}%</td></tr>`;
+                            });
+
+                            html += '</table>';
+
+                            // 확률 div에 HTML 삽입
+                            resultProbDiv.innerHTML = html;
+                        }
+                    })
+                    .catch(err => {
+                        resultDiv.textContent = '요청 실패: ' + err;
+                    });
+            }, 'image/png');
+        });
+    </script>
+</body>
+
+</html>
+"""

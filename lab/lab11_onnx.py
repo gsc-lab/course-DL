@@ -28,6 +28,7 @@ img = img.unsqueeze(0)           # ONNX 모델 입력 형태 생성을 위해 ba
 model = torch.load("models/mnist.pth", weights_only=False)
 model.eval()                     # ONNX 변환에서 필수: 학습 모드에서 export되면 잘못된 그래프 생성됨
 
+img = torch.randn(1, 1, 28, 28, dtype=torch.float32)
 
 # -----------------------------
 # 3. PyTorch → ONNX 변환(핵심)
